@@ -1,17 +1,19 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import BmiCalculator from './src';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import BmiCalculator from './src/BmiCalculator';
+import CalorieTracker from './src/CalorieTracker';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <BmiCalculator/>
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="BmiCalculator">
+        <Stack.Screen name="BmiCalculator" component={BmiCalculator} />
+        <Stack.Screen name="CalorieTracker" component={CalorieTracker} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

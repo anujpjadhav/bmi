@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import Constants from 'expo-constants';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Picker } from '@react-native-picker/picker';
 
-const BmiCalculator = () => {
-    const [name, setName] = useState(''); // State to store the user's name
-    const [gender, setGender] = useState(''); // State to store the user's gender
-    const [weight, setWeight] = useState('');
+const BmiCalculator = ({ navigation }) => {
+    const [name, setName] = useState('');
+    const [gender, setGender] = useState('');
     const [height, setHeight] = useState('');
-    const [bmi, setBmi] = useState('');
-    const [description, setDescription] = useState('');
+    const [weight, setWeight] = useState('');
+    const [bmi, setBmi] = useState(null);
+    const [category, setCategory] = useState('');
+    const [description, setDescription] = useState(''); // Added description state
 
-    // Diet plans for each BMI category
     const dietPlans = {
         underweight: `
             <h2>Diet Plan for Underweight</h2>
@@ -133,27 +132,35 @@ const BmiCalculator = () => {
         `
     };
 
-    // Function to calculate BMI and assign a description
     const calculateBmi = () => {
-        const bmi = weight / ((height / 100) * (height / 100));
-        setBmi(bmi.toFixed(1));
+        const heightInMeters = height / 100;
+        const bmiValue = weight / (heightInMeters * heightInMeters);
+        setBmi(bmiValue.toFixed(1));
 
-        if (bmi < 18.5) {
-            setDescription("You are Underweight, consume more healthy calories");
-        } else if (bmi >= 18.5 && bmi <= 24.9) {
-            setDescription("You are normal, keep it up and Stay motivated");
-        } else if (bmi >= 25 && bmi <= 29.9) {
-            setDescription("You are Overweight, consume fewer calories and burn more");
-        } else if (bmi >= 30) {
-            setDescription("Obese, Hit the Gym");
+        let bmiCategory = '';
+        let descriptionText = '';
+
+        if (bmiValue < 18.5) {
+            bmiCategory = 'Underweight';
+            descriptionText = "You are Underweight, consume more healthy calories";
+        } else if (bmiValue >= 18.5 && bmiValue <= 24.9) {
+            bmiCategory = 'Normal';
+            descriptionText = "You are normal, keep it up and Stay motivated";
+        } else if (bmiValue >= 25 && bmiValue <= 29.9) {
+            bmiCategory = 'Overweight';
+            descriptionText = "You are Overweight, consume fewer calories and burn more";
+        } else if (bmiValue >= 30) {
+            bmiCategory = 'Obese';
+            descriptionText = "Obese, Hit the Gym";
         }
+
+        setCategory(bmiCategory);
+        setDescription(descriptionText);
     };
 
-    // Function to generate the PDF with the BMI result and diet plan
     const generatePdf = async () => {
         let dietPlan = '';
 
-        // Determine the appropriate diet plan based on the BMI description
         if (description.includes("Underweight")) {
             dietPlan = dietPlans.underweight;
         } else if (description.includes("normal")) {
@@ -167,115 +174,111 @@ const BmiCalculator = () => {
         const htmlContent = `
             <html>
             <body>
-                <h1>BMI Result</h1>
-                <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Gender:</strong> ${gender}</p>
-                <p><strong>Height:</strong> ${height} cm</p>
-                <p><strong>Weight:</strong> ${weight} kg</p>
-                <p><strong>BMI:</strong> ${bmi}</p>
-                <p><strong>Description:</strong> ${description}</p>
+                <h1>BMI Report</h1>
+                <p>Name: ${name}</p>
+                <p>Gender: ${gender}</p>
+                <p>Height: ${height} cm</p>
+                <p>Weight: ${weight} kg</p>
+                <p>BMI: ${bmi}</p>
+                <p>Category: ${category}</p>
+                <h2>Diet Plan</h2>
                 ${dietPlan}
             </body>
             </html>
         `;
-
-        // Generate PDF from HTML content
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
-
-        // Share the generated PDF
         await Sharing.shareAsync(uri);
     };
 
     return (
         <View style={styles.container}>
-            <View style={styles.title}>
+                        <View style={styles.title}>
                 <Text style={styles.titleText}>BMI Calculator</Text>
             </View>
 
             <View style={styles.TextInput}>
-                {/* Input for Name */}
                 <TextInput
                     style={styles.input}
                     value={name}
-                    onChangeText={(text) => setName(text)}
-                    placeholder='Enter your name'
+                    onChangeText={setName}
+                    placeholder="Enter your name"
                 />
 
-                {/* Dropdown for Gender */}
                 <Picker
                     selectedValue={gender}
+                    style={styles.picker}
                     onValueChange={(itemValue) => setGender(itemValue)}
-                    style={styles.input}
                 >
                     <Picker.Item label="Select Gender" value="" />
                     <Picker.Item label="Male" value="Male" />
                     <Picker.Item label="Female" value="Female" />
+                    <Picker.Item label="Other" value="Other" />
                 </Picker>
 
                 <TextInput
                     style={styles.input}
                     value={height}
-                    onChangeText={(text) => setHeight(text)}
-                    placeholder='Height in cm'
-                    keyboardType='numeric'
+                    onChangeText={setHeight}
+                    placeholder="Enter height in cm"
+                    keyboardType="numeric"
                 />
+
                 <TextInput
                     style={styles.input}
                     value={weight}
-                    onChangeText={(text) => setWeight(text)}
-                    placeholder='Weight in kg'
-                    keyboardType='numeric'
+                    onChangeText={setWeight}
+                    placeholder="Enter weight in kg"
+                    keyboardType="numeric"
                 />
             </View>
 
-            <TouchableOpacity
-                style={styles.button}
-                onPress={calculateBmi}
-            >
+            <TouchableOpacity style={styles.button} onPress={calculateBmi}>
                 <Text style={styles.buttonText}>Calculate</Text>
             </TouchableOpacity>
 
             <View style={styles.resultView}>
-                <Text style={styles.result}>Name: {name}</Text>
-                <Text style={styles.result}>Gender: {gender}</Text>
-                <Text style={styles.result}>BMI : {bmi}</Text>
-                <Text style={styles.result}>{description}</Text>
+                {bmi && (
+                    <>
+                        <Text style={styles.resultText}>Name: {name}</Text>
+                        <Text style={styles.resultText}>Gender: {gender}</Text>
+                        <Text style={styles.resultText}>Height: {height} cm</Text>
+                        <Text style={styles.resultText}>Weight: {weight} kg</Text>
+                        <Text style={styles.resultText}>Your BMI is {bmi} ({category})</Text>
+                        <Text style={styles.resultText}>{description}</Text>
+                    </>
+                )}
             </View>
 
-            {/* Button to generate and download PDF */}
+            <TouchableOpacity style={styles.button} onPress={generatePdf}>
+                <Text style={styles.buttonText}>Share PDF</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
                 style={styles.button}
-                onPress={generatePdf}
+                onPress={() => navigation.navigate('CalorieTracker')}
             >
-                <Text style={styles.buttonText}>Share pdf</Text>
+                <Text style={styles.buttonText}>Know Your Calories</Text>
             </TouchableOpacity>
         </View>
     );
 };
 
-export default BmiCalculator;
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: Constants.statusBarHeight,
+        padding: 16,
         backgroundColor: '#e0ecde',
     },
     title: {
-        backgroundColor: '#2c6975',
-        marginLeft: -40,
-        height: 80,
-        width: 428,
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginBottom: 16,
     },
     titleText: {
-        color: '#fff',
         fontSize: 24,
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     TextInput: {
-        margin: 10,
+        marginBottom: 16,
     },
     input: {
         backgroundColor: '#fff',
@@ -283,24 +286,34 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
         borderRadius: 5,
         padding: 10,
-        marginBottom: 10
+        marginBottom: 10,
+    },
+    picker: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 5,
+        marginBottom: 10,
     },
     button: {
         backgroundColor: '#2c6975',
         borderRadius: 5,
         padding: 15,
-        margin: 10,
         alignItems: 'center',
+        marginBottom: 16,
     },
     buttonText: {
         color: '#fff',
         fontSize: 18,
     },
     resultView: {
-        padding: 10,
+        marginTop: 16,
+        alignItems: 'center',
     },
-    result: {
-        fontSize: 18,
-        marginBottom: 10,
+    resultText: {
+        fontSize: 16,
+        marginBottom: 5,
     },
 });
+
+export default BmiCalculator;
