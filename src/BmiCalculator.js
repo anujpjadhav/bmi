@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Picker } from '@react-native-picker/picker';
+import ModalComponent from './ModalComponent';  // Import modal component
 
 const BmiCalculator = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -11,126 +12,8 @@ const BmiCalculator = ({ navigation }) => {
     const [weight, setWeight] = useState('');
     const [bmi, setBmi] = useState(null);
     const [category, setCategory] = useState('');
-    const [description, setDescription] = useState(''); // Added description state
-
-    const dietPlans = {
-        underweight: `
-            <h2>Diet Plan for Underweight</h2>
-            <table border="1" style="width:100%; border-collapse: collapse;">
-                <tr>
-                    <th>Meal</th>
-                    <th>Food Items</th>
-                </tr>
-                <tr>
-                    <td>Breakfast</td>
-                    <td>High-calorie smoothie, eggs, avocado</td>
-                </tr>
-                <tr>
-                    <td>Lunch</td>
-                    <td>Chicken sandwich, salad with nuts</td>
-                </tr>
-                <tr>
-                    <td>Snack</td>
-                    <td>Greek yogurt with honey, mixed nuts</td>
-                </tr>
-                <tr>
-                    <td>Dinner</td>
-                    <td>Grilled salmon, quinoa, steamed vegetables</td>
-                </tr>
-                <tr>
-                    <td>Evening Snack</td>
-                    <td>Peanut butter on whole grain toast</td>
-                </tr>
-            </table>
-        `,
-        normal: `
-            <h2>Diet Plan for Normal</h2>
-            <table border="1" style="width:100%; border-collapse: collapse;">
-                <tr>
-                    <th>Meal</th>
-                    <th>Food Items</th>
-                </tr>
-                <tr>
-                    <td>Breakfast</td>
-                    <td>Oatmeal with fruit, nuts, and yogurt</td>
-                </tr>
-                <tr>
-                    <td>Lunch</td>
-                    <td>Grilled chicken salad with mixed greens</td>
-                </tr>
-                <tr>
-                    <td>Snack</td>
-                    <td>Apple slices with almond butter</td>
-                </tr>
-                <tr>
-                    <td>Dinner</td>
-                    <td>Baked fish with vegetables and brown rice</td>
-                </tr>
-                <tr>
-                    <td>Evening Snack</td>
-                    <td>Handful of mixed nuts</td>
-                </tr>
-            </table>
-        `,
-        overweight: `
-            <h2>Diet Plan for Overweight</h2>
-            <table border="1" style="width:100%; border-collapse: collapse;">
-                <tr>
-                    <th>Meal</th>
-                    <th>Food Items</th>
-                </tr>
-                <tr>
-                    <td>Breakfast</td>
-                    <td>Greek yogurt with berries and chia seeds</td>
-                </tr>
-                <tr>
-                    <td>Lunch</td>
-                    <td>Quinoa salad with vegetables and chickpeas</td>
-                </tr>
-                <tr>
-                    <td>Snack</td>
-                    <td>Carrot sticks with hummus</td>
-                </tr>
-                <tr>
-                    <td>Dinner</td>
-                    <td>Grilled chicken breast with steamed broccoli</td>
-                </tr>
-                <tr>
-                    <td>Evening Snack</td>
-                    <td>Small apple or pear</td>
-                </tr>
-            </table>
-        `,
-        obese: `
-            <h2>Diet Plan for Obese</h2>
-            <table border="1" style="width:100%; border-collapse: collapse;">
-                <tr>
-                    <th>Meal</th>
-                    <th>Food Items</th>
-                </tr>
-                <tr>
-                    <td>Breakfast</td>
-                    <td>Smoothie with spinach, banana, and protein powder</td>
-                </tr>
-                <tr>
-                    <td>Lunch</td>
-                    <td>Mixed green salad with grilled turkey</td>
-                </tr>
-                <tr>
-                    <td>Snack</td>
-                    <td>Celery sticks with almond butter</td>
-                </tr>
-                <tr>
-                    <td>Dinner</td>
-                    <td>Baked salmon with asparagus and cauliflower rice</td>
-                </tr>
-                <tr>
-                    <td>Evening Snack</td>
-                    <td>Handful of almonds</td>
-                </tr>
-            </table>
-        `
-    };
+    const [description, setDescription] = useState(''); 
+    const [modalVisible, setModalVisible] = useState(false);  // Modal state
 
     const calculateBmi = () => {
         const heightInMeters = height / 100;
@@ -142,57 +25,110 @@ const BmiCalculator = ({ navigation }) => {
 
         if (bmiValue < 18.5) {
             bmiCategory = 'Underweight';
-            descriptionText = "You are Underweight, consume more healthy calories";
+            descriptionText = "You are Underweight. Consider incorporating more nutritious foods like nuts, avocados, and lean proteins into your diet to help gain weight in a healthy manner.";
         } else if (bmiValue >= 18.5 && bmiValue <= 24.9) {
             bmiCategory = 'Normal';
-            descriptionText = "You are normal, keep it up and Stay motivated";
+            descriptionText = "You are in the normal weight range. Maintain a balanced diet with a mix of fruits, vegetables, lean proteins, and whole grains to stay healthy.";
         } else if (bmiValue >= 25 && bmiValue <= 29.9) {
             bmiCategory = 'Overweight';
-            descriptionText = "You are Overweight, consume fewer calories and burn more";
+            descriptionText = "You are Overweight. Try to include more vegetables, fruits, and lean proteins in your meals, and reduce your intake of high-calorie foods.";
         } else if (bmiValue >= 30) {
             bmiCategory = 'Obese';
-            descriptionText = "Obese, Hit the Gym";
+            descriptionText = "You are Obese. Focus on a diet rich in vegetables, fruits, and lean proteins. Avoid sugary drinks and high-fat foods, and consult with a healthcare professional for a personalized plan.";
         }
 
         setCategory(bmiCategory);
         setDescription(descriptionText);
+
+        // Show modal
+        setModalVisible(true);
+    };
+
+    // Generate specific diet plan based on BMI
+    const generateDietPlan = () => {
+        let dietPlan = '';
+        if (category === 'Underweight') {
+            dietPlan = `
+                <tr><td>Breakfast</td><td>Oats with milk, nuts, and banana</td></tr>
+                <tr><td>Lunch</td><td>Chicken or paneer curry, whole wheat chapati, and vegetables</td></tr>
+                <tr><td>Snacks</td><td>Nuts and dry fruits smoothie</td></tr>
+                <tr><td>Dinner</td><td>Rice, dal, and mixed vegetables</td></tr>
+            `;
+        } else if (category === 'Normal') {
+            dietPlan = `
+                <tr><td>Breakfast</td><td>Whole grain toast, eggs, and fruit</td></tr>
+                <tr><td>Lunch</td><td>Grilled chicken or tofu salad with olive oil dressing</td></tr>
+                <tr><td>Snacks</td><td>Yogurt with fruits and nuts</td></tr>
+                <tr><td>Dinner</td><td>Brown rice, grilled vegetables, and fish or paneer</td></tr>
+            `;
+        } else if (category === 'Overweight') {
+            dietPlan = `
+                <tr><td>Breakfast</td><td>Fruit smoothie with spinach, chia seeds, and almond milk</td></tr>
+                <tr><td>Lunch</td><td>Quinoa salad with beans, chickpeas, and greens</td></tr>
+                <tr><td>Snacks</td><td>Carrot sticks with hummus</td></tr>
+                <tr><td>Dinner</td><td>Grilled vegetables, lentil soup, and quinoa</td></tr>
+            `;
+        } else if (category === 'Obese') {
+            dietPlan = `
+                <tr><td>Breakfast</td><td>Green smoothie with kale, apple, cucumber, and chia seeds</td></tr>
+                <tr><td>Lunch</td><td>Grilled chicken or tofu with steamed vegetables</td></tr>
+                <tr><td>Snacks</td><td>Fresh vegetable salad with lemon dressing</td></tr>
+                <tr><td>Dinner</td><td>Steamed fish, salad, and a small portion of brown rice</td></tr>
+            `;
+        }
+
+        return dietPlan;
     };
 
     const generatePdf = async () => {
-        let dietPlan = '';
+        const dietPlan = generateDietPlan();  // Get the diet plan
 
-        if (description.includes("Underweight")) {
-            dietPlan = dietPlans.underweight;
-        } else if (description.includes("normal")) {
-            dietPlan = dietPlans.normal;
-        } else if (description.includes("Overweight")) {
-            dietPlan = dietPlans.overweight;
-        } else if (description.includes("Obese")) {
-            dietPlan = dietPlans.obese;
-        }
-
+        // HTML content for the PDF
         const htmlContent = `
             <html>
-            <body>
-                <h1>BMI Report</h1>
-                <p>Name: ${name}</p>
-                <p>Gender: ${gender}</p>
-                <p>Height: ${height} cm</p>
-                <p>Weight: ${weight} kg</p>
-                <p>BMI: ${bmi}</p>
-                <p>Category: ${category}</p>
-                <h2>Diet Plan</h2>
-                ${dietPlan}
-            </body>
+                <body>
+                    <h1>BMI Report</h1>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Gender:</strong> ${gender}</p>
+                    <p><strong>Height:</strong> ${height} cm</p>
+                    <p><strong>Weight:</strong> ${weight} kg</p>
+                    <p><strong>BMI:</strong> ${bmi} (${category})</p>
+                    <p><strong>Description:</strong> ${description}</p>
+
+                    <h2>Diet Plan</h2>
+                    <table border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Meal</th>
+                                <th>Diet Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dietPlan}
+                        </tbody>
+                    </table>
+                </body>
             </html>
         `;
-        const { uri } = await Print.printToFileAsync({ html: htmlContent });
-        await Sharing.shareAsync(uri);
+
+        try {
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+            console.log('PDF file created at:', uri);
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(uri);
+            } else {
+                alert('Sharing is not available on this device');
+            }
+        } catch (error) {
+            console.error('Error generating or sharing PDF:', error);
+            alert('Failed to generate or share the PDF');
+        }
     };
 
     return (
         <View style={styles.container}>
-                        <View style={styles.title}>
+            <View style={styles.title}>
                 <Text style={styles.titleText}>BMI Calculator</Text>
             </View>
 
@@ -236,18 +172,18 @@ const BmiCalculator = ({ navigation }) => {
                 <Text style={styles.buttonText}>Calculate</Text>
             </TouchableOpacity>
 
-            <View style={styles.resultView}>
-                {bmi && (
-                    <>
-                        <Text style={styles.resultText}>Name: {name}</Text>
-                        <Text style={styles.resultText}>Gender: {gender}</Text>
-                        <Text style={styles.resultText}>Height: {height} cm</Text>
-                        <Text style={styles.resultText}>Weight: {weight} kg</Text>
-                        <Text style={styles.resultText}>Your BMI is {bmi} ({category})</Text>
-                        <Text style={styles.resultText}>{description}</Text>
-                    </>
-                )}
-            </View>
+            {/* Modal */}
+            <ModalComponent 
+                visible={modalVisible} 
+                name={name}
+                gender={gender}
+                height={height}
+                weight={weight}
+                bmi={bmi}
+                category={category}
+                description={description} 
+                onClose={() => setModalVisible(false)} 
+            />
 
             <TouchableOpacity style={styles.button} onPress={generatePdf}>
                 <Text style={styles.buttonText}>Share PDF</Text>
@@ -293,26 +229,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 5,
+        padding: 10,
         marginBottom: 10,
     },
     button: {
-        backgroundColor: '#2c6975',
+        backgroundColor: '#0d47a1',
+        padding: 16,
         borderRadius: 5,
-        padding: 15,
-        alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 10,
     },
     buttonText: {
         color: '#fff',
-        fontSize: 18,
-    },
-    resultView: {
-        marginTop: 16,
-        alignItems: 'center',
-    },
-    resultText: {
-        fontSize: 16,
-        marginBottom: 5,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 
